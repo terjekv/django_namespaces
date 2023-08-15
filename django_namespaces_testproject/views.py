@@ -3,14 +3,13 @@ from django.views.generic import ListView
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from django_namespaces.mixins import NamespacePermissionMixin
-from django_namespaces.permissions import NamespacePermissions
 
 from .models import NamespacedExample
 from .serializers import NamespacedExampleSerializer
 
 
-class TestView(NamespacePermissionMixin, ListView):
-    """A standard django view."""
+class TestView(ListView):
+    """A django view, without custom permissions."""
 
     queryset = NamespacedExample.objects.all()
     model = NamespacedExample
@@ -23,14 +22,9 @@ class TestListViewDRF(NamespacePermissionMixin, ListCreateAPIView):  # type: ign
     queryset = NamespacedExample.objects.all()
     serializer_class = NamespacedExampleSerializer
 
-    permission_classes = [NamespacePermissions]
-
 
 class TestDetailViewDRF(NamespacePermissionMixin, RetrieveUpdateDestroyAPIView):  # type: ignore
     """A DRF detail view."""
 
     serializer_class = NamespacedExampleSerializer
     queryset = NamespacedExample.objects.all()
-
-    # Specify permission_classes as a list
-    permission_classes = [NamespacePermissions]

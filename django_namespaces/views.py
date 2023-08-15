@@ -52,6 +52,20 @@ class NamespaceViewSet(viewsets.ModelViewSet):
 
     serializer_class = NamespaceSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_url_kwarg = "id"
+
+    def get_object(self):
+        """Get an object based on the id or name."""
+        lookup_value = self.kwargs["id"]
+        queryset = self.get_queryset()
+
+        try:
+            if lookup_value.isdigit():
+                return queryset.get(id=lookup_value)
+            else:
+                return queryset.get(name=lookup_value)
+        except Namespace.DoesNotExist as exc:
+            raise NotFound("Namespace not found.") from exc
 
     def get_queryset(self) -> QuerySet[Namespace]:  # type: ignore
         """Retrieve the queryset of namespaces based on user permissions.
@@ -59,11 +73,22 @@ class NamespaceViewSet(viewsets.ModelViewSet):
         :returns QuerySet[Namespace]: The filtered queryset.
         """
         user = self.request.user
+
+        # If the user is anonymous, return an empty queryset.
+        if user.is_anonymous:
+            return Namespace.objects.none()
+
+        # If the user is a superuser, return all namespaces.
+        if user.is_superuser:
+            return Namespace.objects.all()
+
         action = NamespaceActions.READ
-        # Building the dynamic queryset based on user and permissions
-        return Namespace.objects.filter(
-            Q(group__in=user.groups.all()) | Q(user=user)
-        ).filter(**{action.value: True})
+        permitted_namespace_ids = NamespacePermission.objects.filter(
+            Q(group__in=user.groups.all()) | Q(user=user), **{action.value: True}
+        ).values_list("namespace_id", flat=True)
+
+        # Return the filtered queryset based on permissions
+        return Namespace.objects.filter(id__in=permitted_namespace_ids)
 
     def list(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:  # noqa
         """List all relevant namespaces for the authenticated user.
@@ -76,6 +101,19 @@ class NamespaceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def retrieve(
+        self, request: HttpRequest, *args: Any, **kwargs: Any
+    ) -> Response:  # noqa
+        """Get a specific namespaces for the authenticated user.
+
+        :param request (Request): The DRF request object.
+
+        :returns Response: The DRF response object containing the namespace.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def create(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:
         """Create a new namespace.
 
@@ -83,10 +121,14 @@ class NamespaceViewSet(viewsets.ModelViewSet):
 
         :returns Response: The DRF response object.
         """
+        if not self.request.user.is_superuser:
+            return Response(
+                {"message": "Only superusers can create namespaces."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # If you need to add additional logic or transformations, do it here.
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -206,10 +248,6 @@ class NamespaceGrantViewSet(viewsets.ViewSet):
         with transaction.atomic():
             # Remove all existing permissions
             permissions_to_remove.delete()
-
-            print("----ATOMIC----")
-            print(model.objects.filter(namespace=namespace, **user_or_group_filter))
-
             # Re-grant permissions
             for perm in serializer.validated_data["actions"]:  # type: ignore
                 grant_permission(

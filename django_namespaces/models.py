@@ -2,7 +2,8 @@
 # Meta is a bit bugged: https://github.com/microsoft/pylance-release/issues/3814
 # pyright: reportIncompatibleVariableOverride=false
 
-from typing import Any, Type, Union
+from collections import defaultdict
+from typing import Any, Dict, List, Type, Union
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, Group, User
@@ -87,7 +88,7 @@ def has_permission(
 
         filter_criteria &= Q(namespace=namespace, **{action.value: True})
         return model.objects.filter(filter_criteria).exists()
-    except ValidationError:
+    except (ValidationError, AttributeError):
         return False
 
 
@@ -240,6 +241,14 @@ class BasePermission(models.Model):
             )
         super().save(*args, **kwargs)
 
+    def get_true_permission_fields(self) -> List[str]:
+        """Get a list of the permission fields that are True."""
+        return [
+            field
+            for field, value in self.__dict__.items()
+            if field.startswith("has_") and value
+        ]
+
 
 class NamespacePermission(BasePermission):
     """A model for permissions to namespaces themselves."""
@@ -304,85 +313,120 @@ class Namespace(models.Model):
         """Return the name of the namespace."""
         return self.name
 
-    def grant_permission_to_user(
+    def grant_permission(
         self,
         model: "AbstractNamespaceModel",
-        user: AbstractUser,
+        user_or_group: UserOrGroup,
         action: AnyAction,
         requestor: AbstractUser,
     ) -> bool:
-        """Grant the given user the given permission.
+        """Grant the given user or group the given permission.
 
         params:
         model: The Permission model (either NamespacePermission or ObjectPermission).
-        user (AbstractUser): The user to grant the permission to.
+        user_or_group (User or Group): The user or Group to grant the permission to.
         action: The action to grant permissions for.
         """
-        return grant_permission(model, self, user, action, requestor)
+        return grant_permission(model, self, user_or_group, action, requestor)
 
-    def grant_namespace_permission_to_user(
-        self, user: AbstractUser, action: NamespaceActions, requestor: AbstractUser
+    def grant_namespace_permission(
+        self,
+        user_or_group: UserOrGroup,
+        action: NamespaceActions,
+        requestor: AbstractUser,
     ) -> bool:
-        """Grant the given user the given namespace permission.
+        """Grant the given user or group the given namespace permission.
 
-        params: user (AbstractUser): The user to grant the permission to.
+        params: user_or_group (User or Group): The user or group to grant the permission to.
         params: action (NamespacePermissions) The action to grant permissions for.
         """
-        return self.grant_permission_to_user(
-            NamespacePermission, user, action, requestor
+        return self.grant_permission(
+            NamespacePermission, user_or_group, action, requestor
         )
 
-    def grant_object_permission_to_user(
-        self, user: AbstractUser, action: ObjectActions, requestor: AbstractUser
+    def grant_object_permission(
+        self, user_or_group: UserOrGroup, action: ObjectActions, requestor: AbstractUser
     ) -> bool:
-        """Grant the given user the given object permission.
+        """Grant the given user or group the given object permission.
 
         params: user (AbstractUser): The user to grant the permission to.
         params: action (ObjectPermissions) The action to grant permissions for.
         """
-        return self.grant_permission_to_user(ObjectPermission, user, action, requestor)
+        return self.grant_permission(ObjectPermission, user_or_group, action, requestor)
 
-    def revoke_permission_from_user(
+    def revoke_permission(
         self,
         model: Type[models.Model],
-        user: AbstractUser,
+        user_or_group: UserOrGroup,
         action: AnyAction,
         requestor: AbstractUser,
     ) -> bool:
-        """Revoke a specific permission or all permissions from a user.
+        """Revoke a specific permission or all permissions from a user or group.
 
         :param model: The Permission model (either NamespacePermission or ObjectPermission).
-        :param user: The user to revoke the permission from.
+        :param user_or_group: The user or group to revoke the permission from.
         :param action: The action to revoke. If None, all permissions are revoked.
         :return: True if the operation was successful, False otherwise.
         """
-        revoke_permission(model, self, user, action, requestor)
+        revoke_permission(model, self, user_or_group, action, requestor)
 
-    def revoke_namespace_permission_from_user(
-        self, user: AbstractUser, action: NamespaceActions, requestor: AbstractUser
+    def revoke_namespace_permission(
+        self,
+        user_or_group: UserOrGroup,
+        action: NamespaceActions,
+        requestor: AbstractUser,
     ) -> bool:
-        """Revoke a specific namespace permission or all namespace permissions from a user.
+        """Revoke a specific or all namespace permissions from a user or group.
 
-        :param user: The user to revoke the permission from.
+        :param user_or_group: The user or group to revoke the permission from.
         :param action: The action to revoke. If None, all permissions are revoked.
         :return: True if the operation was successful, False otherwise.
         """
-        return self.revoke_permission_from_user(
-            NamespacePermission, user, action, requestor
+        return self.revoke_permission(
+            NamespacePermission, user_or_group, action, requestor
         )
 
-    def revoke_object_permission_from_user(
-        self, user: AbstractUser, action: ObjectActions, requestor: AbstractUser
+    def revoke_object_permission(
+        self, user_or_group: UserOrGroup, action: ObjectActions, requestor: AbstractUser
     ) -> bool:
-        """Revoke a specific object permission or all object permissions from a user.
+        """Revoke a specific object permission or all object permissions from a user or group.
 
-        :param user: The user to revoke the permission from.
+        :param user_or_group: The user or group to revoke the permission from.
         :param action: The action to revoke. If None, all permissions are revoked.
         :return: True if the operation was successful, False otherwise.
         """
-        return self.revoke_permission_from_user(
-            ObjectPermission, user, action, requestor
+        return self.revoke_permission(
+            ObjectPermission, user_or_group, action, requestor
         )
+
+    def get_permissions_representation(
+        self, permission_model: Union[Type[ObjectPermission], Type[NamespacePermission]]
+    ) -> Dict[str, Dict[str, List[str]]]:
+        """Get a dict-representation of the permissions for the namespace."""
+        permissions: Dict[str, Dict[str, List[str]]] = {
+            "users": defaultdict(list),
+            "groups": defaultdict(list),
+        }
+
+        for perm in permission_model.objects.filter(namespace=self):
+            perm_dict = perm.get_true_permission_fields()
+            if perm.user:
+                permissions["users"][perm.user_id].extend(perm_dict)
+            if perm.group:
+                permissions["groups"][perm.group_id].extend(perm_dict)
+
+        # Convert defaultdict to dict for serialization
+        permissions["users"] = dict(permissions["users"])
+        permissions["groups"] = dict(permissions["groups"])
+        return permissions
+
+    def get_namespace_permissions_representation(self):
+        """Get a dict-representation of the namespace permissions for the namespace."""
+        return self.get_permissions_representation(NamespacePermission)
+
+    def get_object_permissions_representation(self):
+        """Get a dict-representation of the object permissions for the namespace."""
+        return self.get_permissions_representation(ObjectPermission)
 
 
 class PermissionMixin:

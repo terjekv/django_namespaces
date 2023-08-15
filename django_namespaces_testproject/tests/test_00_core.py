@@ -50,7 +50,7 @@ class DjangoNamespacesCoreTestCase(TestCase):
 
     def test_grant_user1_read_permission_to_namespace_namespace1(self):
         """Test granting a user read permission to a namespace."""
-        self.namespace1.grant_namespace_permission_to_user(
+        self.namespace1.grant_namespace_permission(
             self.user1, NamespaceActions.READ, self.superuser
         )
 
@@ -76,7 +76,7 @@ class DjangoNamespacesCoreTestCase(TestCase):
 
     def test_grant_user1_read_permission_to_object_test1(self):
         """Test granting a user read permission to an object."""
-        self.namespace1.grant_object_permission_to_user(
+        self.namespace1.grant_object_permission(
             self.user1, ObjectActions.READ, self.superuser
         )
 

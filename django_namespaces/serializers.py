@@ -1,6 +1,6 @@
 """Serializers for the django_namespaces app."""
 
-from typing import Any, Union
+from typing import Any, Dict, Union
 
 from rest_framework import serializers
 
@@ -46,13 +46,33 @@ class ActionEnumField(serializers.ChoiceField):
 
 
 class NamespaceSerializer(serializers.ModelSerializer):
-    """Serializer for Namespace model."""
+    """Serializer for Namespace model.
+
+    Also includes the namespace permissions and object permissions.
+    """
+
+    namespace_permissions = serializers.SerializerMethodField()
+    object_permissions = serializers.SerializerMethodField()
 
     class Meta:
         """Meta class for NamespaceSerializer."""
 
         model = Namespace
-        fields = "__all__"
+        fields = [
+            "id",
+            "name",
+            "description",
+            "namespace_permissions",
+            "object_permissions",
+        ]
+
+    def get_namespace_permissions(self, obj: Namespace) -> Dict[str, Any]:
+        """Get the namespace permissions representation."""
+        return obj.get_namespace_permissions_representation()
+
+    def get_object_permissions(self, obj: Namespace) -> Dict[str, Any]:
+        """Get the object permissions representation."""
+        return obj.get_object_permissions_representation()
 
 
 class ObjectPermissionSerializer(serializers.ModelSerializer):

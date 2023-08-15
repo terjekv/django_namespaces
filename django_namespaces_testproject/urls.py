@@ -25,12 +25,12 @@ from .views import TestDetailViewDRF, TestListViewDRF, TestView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("test/", TestView.as_view(), name="test_view"),
+    path("test/", TestView.as_view(), name="test-view"),
     path(
         "testdetail/<pk>",
         TestDetailViewDRF.as_view(),
-        name="test_view_detail_DRF",
+        name="test-view-detail",
     ),
-    path("testlist/", TestListViewDRF.as_view(), name="test_view_list_DRF"),
+    path("testlist/", TestListViewDRF.as_view(), name="test-view-list"),
     path("namespaces/", include(django_namespaces_urls.router.urls)),
 ]
