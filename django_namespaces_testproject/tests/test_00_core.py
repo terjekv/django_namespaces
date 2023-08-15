@@ -70,9 +70,14 @@ class DjangoNamespacesCoreTestCase(TestCase):
             self.user1.i_can_namespace(NamespaceActions.READ, self.namespace1)
         )
 
+        self.assertTrue(self.user1.i_can(NamespaceActions.READ, self.namespace1))
+
         # We still only have namespace access, no object access.
         with self.assertRaises(PermissionDenied):
             self.user1.i_can_object(ObjectActions.READ, self.test1)
+
+        with self.assertRaises(PermissionDenied):
+            self.user1.i_can(ObjectActions.READ, self.test1)
 
     def test_grant_user1_read_permission_to_object_test1(self):
         """Test granting a user read permission to an object."""

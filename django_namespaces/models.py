@@ -132,7 +132,7 @@ def grant_permission(
         if not created:
             setattr(perm_obj, action.value, True)
             perm_obj.save()
-    except ValidationError:
+    except ValidationError:  # pragma: no cover
         return False
 
     return True
@@ -184,7 +184,7 @@ def revoke_permission(
         else:
             # Revoke all permissions (remove the entry completely)
             model.objects.filter(**filter_criteria).delete()
-    except (model.DoesNotExist, ValidationError):
+    except (model.DoesNotExist, ValidationError):  # pragma: no cover
         return False
 
     return True
@@ -225,11 +225,13 @@ class BasePermission(models.Model):
     def __str__(self) -> str:
         """Return a string representation of the permission."""
         if self.group:
-            return (
-                f"{self._meta.verbose_name} for {self.group} in {self.namespace.name}"
-            )
+            idstring = f"the group '{self.group}' ({self.group.id})"
+        else:
+            idstring = f"the user '{self.user}' ({self.user.id})"  # type: ignore
 
-        return f"{self._meta.verbose_name} for {self.user} in {self.namespace.name}"
+        nsstring = f"for '{self.namespace.name}' ({self.namespace.id})"
+
+        return f"{self._meta.verbose_name} for {idstring} for {nsstring}"
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         """Override the save method to validate that either group or user is set, but not both."""
@@ -258,23 +260,7 @@ class NamespacePermission(BasePermission):
     class Meta:
         """Meta options for the NamespacePermission model."""
 
-        verbose_name = "Namespace Permissions"
-
-    def user_can(
-        self,
-        user: AbstractUser,
-        namespace: "Namespace",
-        action: NamespaceActions,
-        requestor: AbstractUser,
-    ) -> bool:
-        """Check if a user can perform the given action on the given namespace.
-
-        params: user (AbstractUser): The user to check permissions for.
-        params: action (ValidNamespaceActions): The action to check permissions for.
-
-        returns: bool: True if the user can perform the action, False otherwise.
-        """
-        return has_permission(ObjectPermission, namespace, user, action, requestor)
+        verbose_name = "NamespacePermissions"
 
 
 class ObjectPermission(BasePermission):
@@ -283,24 +269,7 @@ class ObjectPermission(BasePermission):
     class Meta:
         """Meta options for the ObjectPermission model."""
 
-        verbose_name = "Permissions for objects in a Namespace"
-
-    def user_can(
-        self,
-        user: AbstractUser,
-        namespace: "Namespace",
-        action: ObjectActions,
-        requestor: AbstractUser,
-    ) -> bool:
-        """Check if a user can perform the given action on objects in the given namespace.
-
-        params: user (AbstractUser): The user to check permissions for.
-        params: namespace (Namespace): The namespace to check permissions for.
-        params: action (ValidObjectActions): The action to check permissions for.
-
-        returns: bool: True if the user can perform the action, False otherwise.
-        """
-        return has_permission(ObjectPermission, namespace, user, action, requestor)
+        verbose_name = "ObjectPermissions"
 
 
 class Namespace(models.Model):
@@ -440,7 +409,7 @@ class PermissionMixin:
         :param action (NamespaceAction or ObjectAction): The action to check permissions for.
         :param obj (Namespace or AbstractNamespaceModel): The object to check permissions for.
         """
-        return self.target_can(action, obj, self)
+        return self.target_can(self, action, obj)
 
     def i_can_namespace(self, action: NamespaceActions, obj: Namespace) -> bool:
         """Check if the current user can perform the given action on the given namespace.
@@ -473,9 +442,9 @@ class PermissionMixin:
         :param obj (Namespace or AbstractNamespaceModel): The object to check permissions for.
         """
         if isinstance(action, NamespaceActions):
-            return self.target_can_namespace(action, obj, target)
+            return self.target_can_namespace(target, action, obj)
 
-        return self.target_can_object(action, obj, target)
+        return self.target_can_object(target, action, obj)
 
     def target_can_namespace(
         self,
@@ -525,16 +494,6 @@ class AbstractNamespaceModel(models.Model):
 
         abstract = True
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: no cover
         """Return a string indicating which namespace the object belongs to."""
-        return f"Object in {self.namespace.name} namespace"
-
-    def user_can(
-        self, user: AbstractUser, action: ObjectActions, requestor: AbstractUser
-    ) -> bool:
-        """Check if the given user can perform the given action on the current object.
-
-        :param user: The user to check permissions for.
-        :param action: The action to check permissions for.
-        """
-        return has_permission(ObjectPermission, self.namespace, user, action, requestor)
+        return f"Object {self.id} in the namespace '{self.namespace.name}' ({self.namespace.id})"

@@ -3,6 +3,11 @@
 
 from unittest.mock import Mock
 
+from django.contrib.auth.models import Group
+
+from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
+
 from django.db.models import Q
 from django.test import TestCase
 from rest_framework.exceptions import MethodNotAllowed
@@ -11,15 +16,20 @@ from rest_framework.views import APIView
 from django_namespaces.constants import (
     HTTP_METHOD_TO_OBJECTACTION_MAP,
     NamespaceActions,
+    ObjectActions,
 )
 from django_namespaces.mixins import NamespacePermissionMixin
 from django_namespaces.models import (
+    ObjectPermission,
     NamespacePermission,
     NamespaceUser,
+    Namespace,
     grant_permission,
     has_permission,
     revoke_permission,
 )
+
+from django_namespaces.serializers import ActionEnumField
 
 
 class MockModel:
@@ -57,28 +67,136 @@ class DjangoNamespacesMixinTestCase(TestCase):
             mixin.get_permission_filter(mock_request, mock_view)
 
 
+class DjangoPermissionStrTestCase(TestCase):
+    """Test that stringifying permissions returns what we expect."""
+
+    def setUp(self):
+        """Set up the test case."""
+
+        self.user = NamespaceUser.objects.create(username="username")
+        self.group = Group.objects.create(name="groupname")
+        self.namespace = Namespace.objects.create(name="namespacename")
+
+    def test_namespace_permission_str(self):
+        """Test that the string representation of a NamespacePermission is correct."""
+        permission = NamespacePermission.objects.create(
+            namespace=self.namespace,
+            user=self.user,
+            has_read=True,
+        )
+
+        userstring = f"user '{self.user.username}' ({self.user.id})"
+        groupstring = f"group '{self.group.name}' ({self.group.id})"
+        nsstring = f"for '{self.namespace.name}' ({self.namespace.id})"
+        self.assertEqual(
+            str(permission),
+            f"NamespacePermissions for the {userstring} for {nsstring}",
+        )
+        permission.delete()
+
+        permission = NamespacePermission.objects.create(
+            namespace=self.namespace,
+            group=self.group,
+            has_read=True,
+        )
+
+        self.assertEqual(
+            str(permission),
+            f"NamespacePermissions for the {groupstring} for {nsstring}",
+        )
+
+
+class DjangoNamespacesSerializersTestCase(TestCase):
+    """Test the serializers."""
+
+    def test_action_enum_field(self):
+        """Test the ActionEnumField."""
+        with self.assertRaises(ValidationError):
+            ActionEnumField(object_type="wrong")
+
+        aef = ActionEnumField(object_type="objects")
+        self.assertEqual(aef.to_representation(ObjectActions.READ), "has_read")
+        self.assertEqual(aef.to_representation(ObjectActions.CREATE), "has_create")
+        self.assertEqual(aef.to_internal_value("has_read"), ObjectActions.READ)
+
+        with self.assertRaises(ValidationError):
+            ActionEnumField(object_type="wrong")
+
+        with self.assertRaises(ValidationError):
+            self.assertEqual(aef.to_internal_value("wrong"), ObjectActions.READ)
+
+        with self.assertRaises(ValidationError):
+            aef.object_type = "wrong"
+            self.assertEqual(aef.to_internal_value("has_read"), ObjectActions.READ)
+
+
 class DjangoNamespacesModelTestCase(TestCase):
     """Test core functionality of model and their functions."""
 
-    def test_permission_function_exceptions(self):
-        """Test that has_permission handles input correctly."""
-        user = NamespaceUser.objects.create_user("testuser")
+    def setUp(self) -> None:
+        """Set up the test case."""
+        self.user = NamespaceUser.objects.create(username="username")
+        self.namespace = Namespace.objects.create(name="namespacename")
+        self.su = NamespaceUser.objects.create(username="su", is_superuser=True)
+        self.group = Group.objects.create(name="groupname")
+        return super().setUp()
 
+    def test_permission_user_or_group_validation(self):
+        """Test that we can't have both a group and a user in permisson object"""
+
+        with self.assertRaises(DjangoValidationError):
+            NamespacePermission.objects.create(
+                namespace=self.namespace,
+                user=self.user,
+                group=self.group,
+                has_read=True,
+            )
+
+        with self.assertRaises(DjangoValidationError):
+            NamespacePermission.objects.create(
+                namespace=self.namespace,
+                has_read=True,
+            )
+
+    def test_permission_function_input(self):
+        """Test that has_permission handles input correctly."""
         self.assertFalse(has_permission(NamespacePermission, "", "", "", None))
 
-        with self.assertRaises(ValueError):
-            self.assertFalse(grant_permission(NamespacePermission, "", "", "", user))
+    def test_revoking_permissions(self):
+        """Test that revoking a permission works."""
+        cls = NamespacePermission
+        rargs = (cls, self.namespace, self.user, NamespaceActions.READ, self.su)
+        dargs = (cls, self.namespace, self.user, NamespaceActions.DELEGATE, self.su)
 
-        with self.assertRaises(ValueError):
-            self.assertFalse(revoke_permission(NamespacePermission, "", "", "", user))
+        # Revoke specific permission. We give DELETE and READ permissions,
+        # revoke READ, and check that DELETE is still there.
+        grant_permission(*dargs)
+        grant_permission(*rargs)
+        self.assertTrue(has_permission(*rargs))
+        self.assertTrue(has_permission(*dargs))
+        revoke_permission(*rargs)
+        self.assertFalse(has_permission(*rargs))
+        self.assertTrue(has_permission(*dargs))
 
-        with self.assertRaises(ValueError):
-            has_permission(NamespacePermission, "", "", NamespaceActions.READ, None)
+        # Revoke all permissions (passing None as action).
+        # We regrant READ to see that both are gone.
+        grant_permission(*rargs)
+        self.assertTrue(has_permission(*rargs))
+        revoke_permission(NamespacePermission, self.namespace, self.user, None, self.su)
+        self.assertFalse(has_permission(*rargs))
+        self.assertFalse(has_permission(*dargs))
 
-        with self.assertRaises(ValueError):
-            grant_permission(NamespacePermission, "", "", NamespaceActions.READ, user)
+        # Test that we can revoke permissions via the namespace.
+        grant_permission(*rargs)
+        self.assertTrue(has_permission(*rargs))
+        self.namespace.revoke_namespace_permission(
+            self.user, NamespaceActions.READ, self.su
+        )
+        self.assertFalse(has_permission(*rargs))
 
-        with self.assertRaises(ValueError):
-            revoke_permission(NamespacePermission, "", "", NamespaceActions.READ, user)
-
-        user.delete()
+        cls = ObjectPermission
+        rargs = (cls, self.namespace, self.user, ObjectActions.READ, self.su)
+        grant_permission(*rargs)
+        self.assertTrue(has_permission(*rargs))
+        self.namespace.revoke_object_permission(self.user, ObjectActions.READ, self.su)
+        self.assertFalse(has_permission(*rargs))

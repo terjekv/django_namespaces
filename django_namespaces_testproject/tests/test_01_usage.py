@@ -238,5 +238,3 @@ class NamespacePermissionTestBase(TestCase):
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        # Ensure permissions have been revoked.
-        # Again, this check would depend on how your data models and views are set up.
