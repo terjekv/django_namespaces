@@ -1,13 +1,10 @@
 """Tests for the core functionality of django_namespaces."""
 
-from django.contrib.auth.models import AbstractUser, Group
+from django.contrib.auth.models import Group
 from django.test import TestCase
 from rest_framework.exceptions import PermissionDenied
 
-from django_namespaces.constants import (
-    NamespaceActions,
-    ObjectActions,
-)
+from django_namespaces.constants import NamespaceActions, ObjectActions
 from django_namespaces.models import (
     Namespace,
     NamespacePermission,
@@ -19,11 +16,6 @@ from django_namespaces_testproject.models import NamespacedExample
 
 class DjangoNamespacesCoreTestCase(TestCase):
     """Test core functionality for django_namespaces."""
-
-    def _add_user_to_group(self, user: AbstractUser, group: Group):
-        """Add a user to a group."""
-        user.groups.add(group)
-        user.save()
 
     def setUp(self):
         """Set up the test case."""

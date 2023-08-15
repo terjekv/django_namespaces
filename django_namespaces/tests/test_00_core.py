@@ -4,13 +4,10 @@
 from unittest.mock import Mock
 
 from django.contrib.auth.models import Group
-
-from rest_framework.exceptions import ValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
-
 from django.db.models import Q
 from django.test import TestCase
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.exceptions import MethodNotAllowed, NotFound, ValidationError
 from rest_framework.views import APIView
 
 from django_namespaces.constants import (
@@ -20,22 +17,37 @@ from django_namespaces.constants import (
 )
 from django_namespaces.mixins import NamespacePermissionMixin
 from django_namespaces.models import (
-    ObjectPermission,
+    Namespace,
     NamespacePermission,
     NamespaceUser,
-    Namespace,
+    ObjectPermission,
     grant_permission,
     has_permission,
     revoke_permission,
 )
-
 from django_namespaces.serializers import ActionEnumField
+from django_namespaces.views import get_from_id_or_name
 
 
 class MockModel:
     """An empty mock model, for queryset data."""
 
     pass
+
+
+class DjangoNamespacesViewsTestCase(TestCase):
+    """Test core functionality of the views."""
+
+    def test_get_from_id_or_name(self):
+        """Test that we get the correct objects when using get_from_id_or_name."""
+        ns = Namespace.objects.create(name="namespacename")
+
+        self.assertEqual(get_from_id_or_name(Namespace, ns.id), ns)
+        self.assertEqual(get_from_id_or_name(Namespace, str(ns.id)), ns)
+        self.assertEqual(get_from_id_or_name(Namespace, ns.name), ns)
+
+        with self.assertRaises(NotFound):
+            get_from_id_or_name(Namespace, "wrong")
 
 
 class DjangoNamespacesMixinTestCase(TestCase):
@@ -72,7 +84,6 @@ class DjangoPermissionStrTestCase(TestCase):
 
     def setUp(self):
         """Set up the test case."""
-
         self.user = NamespaceUser.objects.create(username="username")
         self.group = Group.objects.create(name="groupname")
         self.namespace = Namespace.objects.create(name="namespacename")
@@ -142,8 +153,7 @@ class DjangoNamespacesModelTestCase(TestCase):
         return super().setUp()
 
     def test_permission_user_or_group_validation(self):
-        """Test that we can't have both a group and a user in permisson object"""
-
+        """Test that we can't have both a group and a user in permisson object."""
         with self.assertRaises(DjangoValidationError):
             NamespacePermission.objects.create(
                 namespace=self.namespace,

@@ -6,10 +6,7 @@ from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from django_namespaces.models import (
-    AbstractNamespaceModel,
-    ObjectPermission,
-)
+from django_namespaces.models import AbstractNamespaceModel, ObjectPermission
 
 from .constants import HTTP_METHOD_TO_OBJECTACTION_MAP
 

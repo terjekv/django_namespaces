@@ -1,6 +1,5 @@
 """Tests for object permissions."""
 from http import HTTPStatus
-from typing import Dict, Union
 
 from django.contrib.auth.models import Group
 from django.test import Client, TestCase
@@ -12,38 +11,12 @@ from django_namespaces.models import (
     NamespacePermission,
     NamespaceUser,
     ObjectPermission,
-    has_permission,
 )
 from django_namespaces_testproject.models import NamespacedExample
 
 
 class ObjectPermissionTestBase(TestCase):
     """Base class for testing permissions."""
-
-    def assert_permission_map(
-        self, permission_map: Dict[Union[NamespaceActions, ObjectActions], bool]
-    ):
-        """Assert a map of permissions."""
-        for action, expected_result in permission_map.items():
-            self.assert_permission(action, expected_result)
-
-    def assert_permission(
-        self, action: Union[NamespaceActions, ObjectActions], expected_result: bool
-    ):
-        """Assert a single permission."""
-        model = (
-            NamespacePermission
-            if isinstance(action, NamespaceActions)
-            else ObjectPermission
-        )
-        result = has_permission(
-            model,
-            self.namespace1,
-            self.user1,
-            action,
-            self.superuser,
-        )
-        self.assertEqual(result, expected_result, f"Action {action} failed")
 
     def setUp(self):
         """Set up the test case."""
@@ -131,6 +104,9 @@ class ObjectPermissionTestBase(TestCase):
         response = client.get(reverse("test-view-list"))
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
+        response = client.get(reverse("namespace-list-list"))
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
     def test_users_see_objects_with_permissions(self):
         """Test that user1 sees objects in namespace1 when given permission."""
         self.namespace1.grant_permission(
@@ -145,6 +121,21 @@ class ObjectPermissionTestBase(TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.json()["name"], "test01")
+
+    def test_users_see_namespaces_with_permissions(self):
+        """Test that user1 sees namespaces when given permission."""
+        self.namespace1.grant_permission(
+            NamespacePermission, self.user1, NamespaceActions.READ, self.superuser
+        )
+        response = self.user1client.get(reverse("namespace-list-list"))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(len(response.json()), 1)
+
+        response = self.user1client.get(
+            reverse("namespace-list-detail", args=[self.namespace1.id])
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.json()["name"], "test_namespace1")
 
     def test_users_can_create_objects_with_permissions(self):
         """Test that user1 can create objects in namespace1 when given permission."""
@@ -207,3 +198,129 @@ class ObjectPermissionTestBase(TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.json()["name"], "test01")
+
+    def test_users_cannot_create_namespaces(self):
+        """Test that users cannot create namespaces."""
+        url = reverse("namespace-list-list")
+        response = self.user1client.post(url, {"name": "tmp_namespace"})
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_superuser_can_create_and_delete_namespaces(self):
+        """Test that superuser can create namespaces."""
+        url = reverse("namespace-list-list")
+        response = self.superuserclient.post(url, {"name": "tmp_namespace"})
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        ns = Namespace.objects.get(name="tmp_namespace")
+        self.assertEqual(ns.name, response.json()["name"])
+
+        response = self.superuserclient.delete(
+            reverse("namespace-list-detail", args=[response.json()["id"]])
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NO_CONTENT)
+
+        with self.assertRaises(Namespace.DoesNotExist):
+            Namespace.objects.get(name="tmp_namespace")
+
+    def test_users_delete_namespaces_same_permission_source(self):
+        """Test that users can get permissions to delete namespaces.
+
+        This tests that the user can delete the namespace if both read and delete
+        permissions are granted to the same source (the user themselves).
+        """
+        tmpns = Namespace.objects.create(name="tmp_namespace")
+        tmpns.grant_permission(
+            NamespacePermission, self.user1, NamespaceActions.DELETE, self.superuser
+        )
+        tmpns.grant_permission(
+            NamespacePermission, self.user1, NamespaceActions.READ, self.superuser
+        )
+        response = self.user1client.delete(
+            reverse("namespace-list-detail", args=[tmpns.id])
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NO_CONTENT)
+
+        with self.assertRaises(Namespace.DoesNotExist):
+            Namespace.objects.get(id=tmpns.id)
+
+    def test_users_delete_namespaces_different_permission_source(self):
+        """Test that users can get permissions to delete namespaces.
+
+        This tests that the user can delete the namespace if the read and delete
+        permissions are granted through different sources.
+
+        One group allows for reading, another for deleting, the user is a member
+        of both.
+        """
+        tmpns = Namespace.objects.create(name="tmp_namespace")
+        readgroup = Group.objects.create(name="readgroup")
+        deletegroup = Group.objects.create(name="deletegroup")
+        tmpns.grant_permission(
+            NamespacePermission, deletegroup, NamespaceActions.DELETE, self.superuser
+        )
+        tmpns.grant_permission(
+            NamespacePermission, readgroup, NamespaceActions.READ, self.superuser
+        )
+
+        self.user1.groups.add(readgroup)
+        response = self.user1client.get(
+            reverse("namespace-list-detail", args=[tmpns.id])
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        response = self.user1client.delete(
+            reverse("namespace-list-detail", args=[tmpns.id])
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+        self.user1.groups.add(deletegroup)
+        response = self.user1client.delete(
+            reverse("namespace-list-detail", args=[tmpns.id])
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NO_CONTENT)
+
+        with self.assertRaises(Namespace.DoesNotExist):
+            Namespace.objects.get(id=tmpns.id)
+
+        self.user1.groups.remove(deletegroup)
+        self.user1.groups.remove(readgroup)
+        deletegroup.delete()
+        readgroup.delete()
+
+    def test_superuser_can_update_namespace(self):
+        """Test that superuser can update namespaces."""
+        tmpns = Namespace.objects.create(name="tmp_namespace")
+        url = reverse("namespace-list-detail", args=[tmpns.id])
+        response = self.superuserclient.patch(
+            url, {"name": "tmp_namespace2"}, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        tmpns.refresh_from_db()
+        self.assertEqual(response.json()["name"], tmpns.name)
+        tmpns.delete()
+
+    def test_user_needs_permissions_to_update_namespace(self):
+        """Test that users need permissions to update namespaces."""
+        tmpns = Namespace.objects.create(name="tmp_namespace")
+        url = reverse("namespace-list-detail", args=[tmpns.id])
+        response = self.user1client.patch(
+            url, {"name": "tmp_namespace2"}, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+
+        tmpns.grant_permission(
+            NamespacePermission, self.user1, NamespaceActions.UPDATE, self.superuser
+        )
+        response = self.user1client.patch(
+            url, {"name": "tmp_namespace2"}, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+
+        # Need both read and update, so add read as well.
+        tmpns.grant_permission(
+            NamespacePermission, self.user1, NamespaceActions.READ, self.superuser
+        )
+        response = self.user1client.patch(
+            url, {"name": "tmp_namespace2"}, content_type="application/json"
+        )
+        tmpns.refresh_from_db()
+        self.assertEqual(response.json()["name"], tmpns.name)
+        tmpns.delete()

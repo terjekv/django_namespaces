@@ -84,51 +84,78 @@ class NamespacePermissionTestBase(TestCase):
         self.test2.delete()
         return super().tearDown()
 
-    def test_get_namespace(self):
+    def test_get_namespace_failure(self):
         """Test getting a namespace."""
         url = reverse(
             "namespace-list-detail",
             kwargs={
-                "id": self.namespace1.name,
+                "id": 999999,
             },
         )
-
-        self.namespace1.grant_namespace_permission(
-            self.user1, NamespaceActions.READ, self.superuser
-        )
-        self.namespace1.grant_namespace_permission(
-            self.group1, NamespaceActions.DELEGATE, self.superuser
-        )
-
-        self.namespace1.grant_object_permission(
-            self.user2, ObjectActions.READ, self.superuser
-        )
-        self.user1.groups.add(self.group1)
-
         response = self.client.get(url)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        data = response.json()
-        self.assertEqual(
-            data["namespace_permissions"]["users"][str(self.user1.id)], ["has_read"]
-        )
-        self.assertEqual(
-            data["namespace_permissions"]["groups"][str(self.group1.id)],
-            ["has_delegate"],
-        )
-        self.assertEqual(
-            data["object_permissions"]["users"][str(self.user2.id)], ["has_read"]
-        )
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
-        # Check that the group is directly OK.
-        self.assertTrue(
-            has_permission(
-                NamespacePermission,
-                self.namespace1,
-                self.group1,
-                NamespaceActions.DELEGATE,
-                self.superuser,
+    def test_get_namespace_ok(self):
+        """Test getting a namespace."""
+        for key in ["id", "name"]:
+            url = reverse(
+                "namespace-list-detail",
+                kwargs={
+                    "id": getattr(self.namespace1, key),
+                },
             )
+            self.namespace1.grant_namespace_permission(
+                self.user1, NamespaceActions.READ, self.superuser
+            )
+            self.namespace1.grant_namespace_permission(
+                self.group1, NamespaceActions.DELEGATE, self.superuser
+            )
+
+            self.namespace1.grant_object_permission(
+                self.user2, ObjectActions.READ, self.superuser
+            )
+            self.user1.groups.add(self.group1)
+
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, HTTPStatus.OK)
+            data = response.json()
+            self.assertEqual(
+                data["namespace_permissions"]["users"][str(self.user1.id)], ["has_read"]
+            )
+            self.assertEqual(
+                data["namespace_permissions"]["groups"][str(self.group1.id)],
+                ["has_delegate"],
+            )
+            self.assertEqual(
+                data["object_permissions"]["users"][str(self.user2.id)], ["has_read"]
+            )
+
+            # Check that the group is directly OK.
+            self.assertTrue(
+                has_permission(
+                    NamespacePermission,
+                    self.namespace1,
+                    self.group1,
+                    NamespaceActions.DELEGATE,
+                    self.superuser,
+                )
+            )
+
+    def test_granting_permission_with_wrong_data_gives_400(self):
+        """Test that granting permissions with wrong data gives 400."""
+        response = self.client.post(
+            reverse(
+                "namespace-grant-grant-permission",
+                kwargs={
+                    "namespace": self.namespace1.id,
+                    "object_type": "namespace",
+                    "entity": "user",
+                    "id": self.user1.id,
+                },
+            ),
+            {"nosuchkey": "false"},
         )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_granting_permissions(self):
         """Test granting permissions."""
@@ -155,6 +182,13 @@ class NamespacePermissionTestBase(TestCase):
         }
 
         self.assert_permission_map(action_permission_map)
+
+    def test_unauthorized_listing_namespaces(self):
+        """Test trying to list namespaces without having logged in."""
+        client = Client()
+        url = reverse("namespace-list-list")
+        response = client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def test_listing_permissions(self):
         """Test listing permissions for a user on a namespace."""
@@ -223,6 +257,14 @@ class NamespacePermissionTestBase(TestCase):
             NamespaceActions.CREATE: False,
         }
         self.assert_permission_map(action_permission_map)
+
+        # Also try patching with wrong data.
+        response = self.client.patch(
+            url,
+            {"zooty": ["has_update", "has_delegate"]},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_revoking_permissions(self):
         """Test revoking permissions."""

@@ -1,5 +1,5 @@
 """The base view for use with the django_namespaces."""
-from typing import Any, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -8,8 +8,9 @@ from django.db.models import Q, QuerySet
 from django.http import HttpRequest
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 
 from django_namespaces.constants import NamespaceActions
 from django_namespaces.models import (
@@ -34,7 +35,7 @@ def get_from_id_or_name(model: Type[models.Model], identifier: str) -> models.Mo
     :param id: The id or name of the model.
     """
     try:
-        if identifier.isdigit():
+        if isinstance(identifier, int) or identifier.isdigit():
             return model.objects.get(id=identifier)
         return model.objects.get(name=identifier)
     except model.DoesNotExist as exc:
@@ -70,13 +71,13 @@ class NamespaceViewSet(viewsets.ModelViewSet):
     def get_queryset(self) -> QuerySet[Namespace]:  # type: ignore
         """Retrieve the queryset of namespaces based on user permissions.
 
+        Note that we are using the permission class "IsAuthenticated" to ensure that
+        only authenticated users can access the viewset, so any user we have
+        at this point will be authenticated.
+
         :returns QuerySet[Namespace]: The filtered queryset.
         """
         user = self.request.user
-
-        # If the user is anonymous, return an empty queryset.
-        if user.is_anonymous:
-            return Namespace.objects.none()
 
         # If the user is a superuser, return all namespaces.
         if user.is_superuser:
@@ -89,6 +90,47 @@ class NamespaceViewSet(viewsets.ModelViewSet):
 
         # Return the filtered queryset based on permissions
         return Namespace.objects.filter(id__in=permitted_namespace_ids)
+
+    def check_permission(
+        self, action: NamespaceActions, instance: Type[Namespace] = None
+    ) -> None:
+        """Check if the user has permission to perform the given action.
+
+        :param action: The desired action from NamespaceActions.
+        :param instance: The instance for which permission is being checked, if any.
+        """
+        user = self.request.user
+
+        # Checking for the CREATE action; only superuser can do it.
+        if action == NamespaceActions.CREATE and not user.is_superuser:
+            raise PermissionDenied("Permission denied.")
+
+        if action != NamespaceActions.CREATE:
+            model = NamespacePermission
+            can_perform = has_permission(model, instance, user, action, None)
+            if not (user.is_superuser or can_perform):
+                raise PermissionDenied("Permission denied.")
+
+    def handle_serializer(
+        self,
+        data: Dict[str, Any],
+        instance: Optional[Type[Namespace]] = None,
+        partial: bool = False,
+    ) -> BaseSerializer:
+        """Handle the serialization process for the given data.
+
+        :param data: The data to be validated and processed.
+        :param instance: The Namespace instance to be updated (for update actions).
+        :param partial: Flag to indicate if the update is partial.
+        :return: The serialized data.
+        """
+        if instance:
+            serializer = self.get_serializer(instance, data=data, partial=partial)
+        else:
+            serializer = self.get_serializer(data=data)
+
+        serializer.is_valid(raise_exception=True)
+        return serializer
 
     def list(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:  # noqa
         """List all relevant namespaces for the authenticated user.
@@ -117,24 +159,47 @@ class NamespaceViewSet(viewsets.ModelViewSet):
     def create(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:
         """Create a new namespace.
 
-        :param request (Request): The DRF request object.
-
-        :returns Response: The DRF response object.
+        :param request: The DRF request object.
+        :return: The DRF response object.
         """
-        if not self.request.user.is_superuser:
-            return Response(
-                {"message": "Only superusers can create namespaces."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+        self.check_permission(NamespaceActions.CREATE)
+        serializer = self.handle_serializer(request.data)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
+
+    def destroy(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:
+        """Delete a namespace.
+
+        :param request: The DRF request object.
+        :return: The DRF response object.
+        """
+        instance = self.get_object()
+        self.check_permission(NamespaceActions.DELETE, instance)
+        self.perform_destroy(instance)
+        return Response(
+            {"message": "Namespace deleted successfully."},
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+    def update(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:
+        """Update a namespace.
+
+        :param request: The DRF request object.
+        :return: The DRF response object.
+        """
+        instance = self.get_object()
+        self.check_permission(NamespaceActions.UPDATE, instance)
+
+        partial = kwargs.get("partial", False)
+        serializer = self.handle_serializer(
+            request.data, instance=instance, partial=partial
+        )
+
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class NamespaceGrantViewSet(viewsets.ViewSet):
