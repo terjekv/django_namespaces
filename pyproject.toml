@@ -34,6 +34,7 @@ Django = "^3 || ^4 || ^5"
 djangorestframework = "^3"
 
 [tool.poetry.group.dev.dependencies]
+psycopg2-binary = "*"
 ruff = "*"
 coverage = { version = "*", extras = ["toml"] }
 black = "*"
@@ -93,7 +94,7 @@ select = [
     "PLE", # pylint-error
     "PLR", # pylint-refactor
     "PLW", # pylint-warning
-    "W", # warnings        
+    "W",   # warnings        
 ]
 ignore = [
     # D203 (1 blank line required before class docstring) is incompatible with
