@@ -50,6 +50,8 @@ jobs:
       #    python -m pip install -r requirements-test.txt
       # - name: Test tox itself
       #   run: tox -r --notest
+      - name: Raw environment
+        run: env
       - name: Test with tox
         run: tox r
       - name: Check migrations
