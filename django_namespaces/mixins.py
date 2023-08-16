@@ -1,12 +1,20 @@
 """Mixins for use with the django_namespaces."""
-from typing import Type
+from typing import Any, Type
 
 from django.db.models import Model, Q, QuerySet
 from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django_namespaces.models import AbstractNamespaceModel, ObjectPermission
+from django_namespaces.constants import ObjectActions
+from django_namespaces.models import (
+    AbstractNamespaceModel,
+    Namespace,
+    ObjectPermission,
+    has_permission,
+)
+from django_namespaces.views import get_from_id_or_name
 
 from .constants import HTTP_METHOD_TO_OBJECTACTION_MAP
 
@@ -60,3 +68,35 @@ class NamespacePermissionMixin:
             queryset = queryset.filter(permission_filter)
 
         return queryset
+
+    # A distinct create method is required as we normally use filter_queryset
+    # to remove objects that the user does not have permission to view,
+    # based on the HTTP method. This is all well and good, but the create method
+    # has no objects to retrieve, so it never calls filter_queryset and therefore
+    # never checks permissions. We do that here instead.
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Override create method to check namespace permissions.
+
+        :param request: The incoming request.
+        :param args: Any positional arguments.
+        :param kwargs: Any keyword arguments.
+
+        :return: The response.
+        """
+        # Note: We check if the super class has a create method, because
+        # some views (e.g. ListAPIView) do not have a create method and our purpose
+        # is only to provide permissions checking, not to add the method itself.
+        if not hasattr(super(), "create"):  # pragma: no cover
+            return MethodNotAllowed("Method not supported for this endpoint.")
+
+        namespace_id = request.data.get("namespace")
+        namespace = get_from_id_or_name(Namespace, namespace_id)
+        user = request.user
+        if not has_permission(
+            ObjectPermission, namespace, user, ObjectActions.CREATE, None
+        ):
+            raise PermissionDenied(
+                "Permission denied for action 'create' in {str(namespace)}"
+            )
+
+        return super().create(request, *args, **kwargs)

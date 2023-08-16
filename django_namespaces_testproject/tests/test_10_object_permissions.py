@@ -122,6 +122,58 @@ class ObjectPermissionTestBase(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.json()["name"], "test01")
 
+    def test_users_can_create_objects_with_permissions(self):
+        """Test that user1 can create objects in namespace1 when given permission."""
+        with self.assertRaises(NamespacedExample.DoesNotExist):
+            NamespacedExample.objects.get(name="test09")
+
+        self.namespace1.revoke_object_permission(
+            self.user1, ObjectActions.CREATE, self.superuser
+        )
+
+        response = self.user1client.post(
+            reverse("test-view-list"),
+            {"name": "test09", "namespace": self.namespace1.pk},
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+        self.namespace1.grant_permission(
+            ObjectPermission, self.user1, ObjectActions.CREATE, self.superuser
+        )
+        response = self.user1client.post(
+            reverse("test-view-list"),
+            {"name": "test09", "namespace": self.namespace1.pk},
+        )
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        self.assertEqual(response.json()["name"], "test09")
+        NamespacedExample.objects.get(name="test09").delete()
+
+    def test_that_create_methods_arent_added_to_views_without_them(self):
+        """Test that create methods aren't added to views without them."""
+        response = self.superuserclient.post("/testdetail/1", {"name": "test09"})
+        self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+
+    def test_users_can_patch_objects_with_permissions(self):
+        """Test that user1 can patch objects in namespace1 when given permission."""
+        response = self.user1client.patch(
+            reverse("test-view-detail", args=[self.objects["test01"].pk]),
+            {"name": "test01patch"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+
+        self.namespace1.grant_permission(
+            ObjectPermission, self.user1, ObjectActions.UPDATE, self.superuser
+        )
+        response = self.user1client.patch(
+            reverse("test-view-detail", args=[self.objects["test01"].pk]),
+            {"name": "test01patch"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.json()["name"], "test01patch")
+        self.objects["test01"].refresh_from_db()
+        self.assertEqual(self.objects["test01"].name, "test01patch")
+
     def test_users_see_namespaces_with_permissions(self):
         """Test that user1 sees namespaces when given permission."""
         self.namespace1.grant_permission(
@@ -136,21 +188,6 @@ class ObjectPermissionTestBase(TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.json()["name"], "test_namespace1")
-
-    def test_users_can_create_objects_with_permissions(self):
-        """Test that user1 can create objects in namespace1 when given permission."""
-        with self.assertRaises(NamespacedExample.DoesNotExist):
-            NamespacedExample.objects.get(name="test09")
-
-        self.namespace1.grant_permission(
-            ObjectPermission, self.user1, ObjectActions.CREATE, self.superuser
-        )
-        response = self.user1client.post(
-            reverse("test-view-list"),
-            {"name": "test09", "namespace": self.namespace1.pk},
-        )
-        self.assertEqual(response.status_code, HTTPStatus.CREATED)
-        self.assertEqual(response.json()["name"], "test09")
 
     def test_only_read_gives_read_access(self):
         """Test that only READ gives read access."""
