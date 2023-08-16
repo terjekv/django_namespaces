@@ -1,0 +1,19 @@
+documentation:
+  - "docs/*"
+
+migrations:
+  - "django_namespaces/migrations/*"
+
+models:
+  - "django_namespaces/models.py"
+
+dependencies:
+  - "poetry.lock"
+
+testing:
+  - "django_namespaces/tests/*"
+  - "django_namespaces_testproject/tests/*"
+  - "tox.ini"
+
+github_actions:
+  - ".github/workflows/*"
