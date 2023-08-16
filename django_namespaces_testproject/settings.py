@@ -74,10 +74,15 @@ WSGI_APPLICATION = "django_namespaces_testproject.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "ENGINE": os.environ.get("DN_DATABASE_ENGINE", "django.db.backends.sqlite3"),
+        "NAME": os.environ.get("DN_DATABASE_NAME", "db.sqlite3"),
+        "USER": os.environ.get("DN_DATABASE_USER", ""),
+        "PASSWORD": os.environ.get("DN_DATABASE_PASSWORD", ""),
+        "HOST": os.environ.get("DN_DATABASE_HOST", ""),
+        "PORT": os.environ.get("DN_DATABASE_PORT", ""),
     }
 }
 

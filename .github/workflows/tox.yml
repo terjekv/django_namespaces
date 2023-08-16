@@ -31,9 +31,9 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     env:
-      HUBUUM_DATABASE_USER: postgres
-      HUBUUM_DATABASE_PASSWORD: postgres
-      HUBUUM_DATABASE_NAME: github_actions
+      DN_DATABASE_USER: postgres
+      DN_DATABASE_PASSWORD: postgres
+      DN_DATABASE_NAME: github_actions
 
     steps:
       - uses: actions/checkout@v3
@@ -71,7 +71,7 @@ jobs:
           path: .coverage
 
   coveralls:
-    if: ${{ github.event_name == 'pull_request' || github.repository == 'terjekv/hubuum' }}
+    if: ${{ github.event_name == 'pull_request' || github.repository == 'terjekv/django_namespaces' }}
     name: Coveralls
     needs: tox
     runs-on: ${{ matrix.os }}
