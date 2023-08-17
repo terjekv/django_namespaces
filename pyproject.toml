@@ -56,8 +56,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 max-line-length = 99
-exclude = "django_namespaces/migrations"
+exclude = '''
+/(
+  | migrations
+)/
 
+'''
 [tool.coverage.run]
 source = ["django_namespaces", "django_namespacessite"]
 # concurrency = multiprocessing
@@ -74,7 +78,10 @@ show_missing = true
 [tool.isort]
 profile = "black"
 line_length = 99
-skip = "django_namespaces/migrations"
+skip = [
+    "django_namespaces/migrations",
+    "django_namespaces_testproject/migrations",
+]
 
 [tool.ruff]
 select = [
