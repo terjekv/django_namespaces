@@ -1,9 +1,12 @@
-from typing import Dict
+"""Test object permissions."""
 from http import HTTPStatus
-from django.http import HttpResponse
+from typing import Dict
+
 from django.contrib.auth.models import Group
+from django.http import HttpResponse
 from django.test import Client, TestCase
 from django.urls import reverse
+
 from django_namespaces.constants import NamespaceActions as NA
 from django_namespaces.constants import ObjectActions as OA
 from django_namespaces.models import (
@@ -13,7 +16,6 @@ from django_namespaces.models import (
     ObjectPermission,
 )
 from django_namespaces_testproject.models import NamespacedExample
-
 
 TEST_VIEW_LIST_URL = reverse("test-view-list")
 NAMESPACE_LIST_URL = reverse("namespace-list-list")
@@ -92,7 +94,7 @@ class ObjectPermissionTestBase(TestCase):
             self.assertEqual(len(response.json()), expected_length)
         return response
 
-    def _assert_detail_response(
+    def _assert_detail_response(  # noqa (too many arguments)
         self,
         client: Client,
         obj_pk: str,
@@ -108,7 +110,7 @@ class ObjectPermissionTestBase(TestCase):
             self.assertEqual(response.json()["name"], expected_name)
         return response
 
-    def _assert_post_response(
+    def _assert_post_response(  # noqa (too many arguments)
         self,
         client: Client,
         data: Dict[str, str],
@@ -123,7 +125,7 @@ class ObjectPermissionTestBase(TestCase):
             self.assertEqual(response.json()["name"], name)
         return response
 
-    def _assert_patch_response(
+    def _assert_patch_response(  # noqa (too many arguments)
         self,
         client: Client,
         object_key: str,
