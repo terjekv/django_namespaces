@@ -74,7 +74,6 @@ WSGI_APPLICATION = "django_namespaces_testproject.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-
 DATABASES = {
     "default": {
         "ENGINE": os.environ.get("DN_DATABASE_ENGINE", "django.db.backends.sqlite3"),
