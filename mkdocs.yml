@@ -5,6 +5,8 @@ site_description: "A permission model for Django through collections of objects.
 
 nav:
   - Home: index.md
+  - Installation: installation.md
+  - API: api.md
 
 theme:
   name: "material"
