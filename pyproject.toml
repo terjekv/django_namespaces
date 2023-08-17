@@ -34,6 +34,7 @@ Django = "^3 || ^4 || ^5"
 djangorestframework = "^3"
 
 [tool.poetry.group.dev.dependencies]
+psycopg2-binary = "*"
 ruff = "*"
 coverage = { version = "*", extras = ["toml"] }
 black = "*"
@@ -55,8 +56,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 max-line-length = 99
-exclude = "django_namespaces/migrations"
+exclude = '''
+/(
+  | migrations
+)/
 
+'''
 [tool.coverage.run]
 source = ["django_namespaces", "django_namespacessite"]
 # concurrency = multiprocessing
@@ -73,7 +78,10 @@ show_missing = true
 [tool.isort]
 profile = "black"
 line_length = 99
-skip = "django_namespaces/migrations"
+skip = [
+    "django_namespaces/migrations",
+    "django_namespaces_testproject/migrations",
+]
 
 [tool.ruff]
 select = [
@@ -93,7 +101,7 @@ select = [
     "PLE", # pylint-error
     "PLR", # pylint-refactor
     "PLW", # pylint-warning
-    "W", # warnings        
+    "W",   # warnings        
 ]
 ignore = [
     # D203 (1 blank line required before class docstring) is incompatible with
