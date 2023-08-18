@@ -97,7 +97,7 @@
 </div>
 </div>
 <div class="md-header__source">
-<a class="md-source" data-md-component="source" href="https://github.com/terjekv/django_namespaces" title="Go to repository">
+<a class="md-source" data-md-component="source" href="https://github.com/terjekv/django_namespace_permissions" title="Go to repository">
 <div class="md-source__icon md-icon">
 <svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"></path></svg>
 </div>
@@ -122,7 +122,7 @@
     Django Namespaces
   </label>
 <div class="md-nav__source">
-<a class="md-source" data-md-component="source" href="https://github.com/terjekv/django_namespaces" title="Go to repository">
+<a class="md-source" data-md-component="source" href="https://github.com/terjekv/django_namespace_permissions" title="Go to repository">
 <div class="md-source__icon md-icon">
 <svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"></path></svg>
 </div>
@@ -194,15 +194,15 @@
 <article class="md-content__inner md-typeset">
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">¶</a></h1>
 <h2 id="add-the-app-to-your-project">Add the app to your project<a class="headerlink" href="#add-the-app-to-your-project" title="Permanent link">¶</a></h2>
-<p><code>poetry add git+https://github.com/terjekv/django_namespaces.git#main</code></p>
+<p><code>poetry add git+https://github.com/terjekv/django_namespace_permissions.git#main</code></p>
 <h2 id="add-the-app-to-your-settings">Add the app to your settings<a class="headerlink" href="#add-the-app-to-your-settings" title="Permanent link">¶</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">[</span>
     <span class="c1"># ...</span>
-    <span class="s2">"django_namespaces"</span><span class="p">,</span>
+    <span class="s2">"django_namespace_permissions"</span><span class="p">,</span>
 <span class="p">]</span>
 </code></pre></div>
 <h2 id="add-namespaces-to-models-you-want-to-be-namespaced">Add namespaces to models you want to be namespaced<a class="headerlink" href="#add-namespaces-to-models-you-want-to-be-namespaced" title="Permanent link">¶</a></h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_namespaces.models</span> <span class="kn">import</span> <span class="n">AbstractNamespaceModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_namespace_permissions.models</span> <span class="kn">import</span> <span class="n">AbstractNamespaceModel</span>
 
 <span class="k">class</span> <span class="nc">NamespacedExample</span><span class="p">(</span><span class="n">AbstractNamespaceModel</span><span class="p">):</span>
     <span class="o">...</span>
@@ -231,11 +231,11 @@
 </code></pre></div>
 <h2 id="add-the-namespace-endpoints-to-your-project">Add the namespace endpoints to your project<a class="headerlink" href="#add-the-namespace-endpoints-to-your-project" title="Permanent link">¶</a></h2>
 <p>A set of endpoints are provided to work with namespaces. To use these endpoints, you need to add the following to your <code>urls.py</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_namespaces</span> <span class="kn">import</span> <span class="n">urls</span> <span class="k">as</span> <span class="n">django_namespaces_urls</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_namespace_permissions</span> <span class="kn">import</span> <span class="n">urls</span> <span class="k">as</span> <span class="n">django_namespace_permissions_urls</span>
 
 <span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
     <span class="c1"># ...</span>
-    <span class="n">path</span><span class="p">(</span><span class="s2">"namespaces/"</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="n">django_namespaces_urls</span><span class="p">)),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s2">"namespaces/"</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="n">django_namespace_permissions_urls</span><span class="p">)),</span>
 <span class="p">]</span>
 </code></pre></div>
 <hr/>
@@ -243,7 +243,7 @@
 <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 17, 2023</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 18, 2023</span>
 </small>
 </div>
 </article>
