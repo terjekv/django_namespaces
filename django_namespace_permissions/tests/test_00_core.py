@@ -1,4 +1,4 @@
-"""Tests for the core functionality of django_namespaces."""
+"""Tests for the core functionality of django_namespace_permissions."""
 
 
 from unittest.mock import Mock
@@ -10,13 +10,13 @@ from django.test import TestCase
 from rest_framework.exceptions import MethodNotAllowed, NotFound, ValidationError
 from rest_framework.views import APIView
 
-from django_namespaces.constants import (
+from django_namespace_permissions.constants import (
     HTTP_METHOD_TO_OBJECTACTION_MAP,
     NamespaceActions,
     ObjectActions,
 )
-from django_namespaces.mixins import NamespacePermissionMixin
-from django_namespaces.models import (
+from django_namespace_permissions.mixins import NamespacePermissionMixin
+from django_namespace_permissions.models import (
     Namespace,
     NamespacePermission,
     NamespaceUser,
@@ -25,8 +25,8 @@ from django_namespaces.models import (
     has_permission,
     revoke_permission,
 )
-from django_namespaces.serializers import ActionEnumField
-from django_namespaces.views import get_from_id_or_name
+from django_namespace_permissions.serializers import ActionEnumField
+from django_namespace_permissions.views import get_from_id_or_name
 
 
 class MockModel:

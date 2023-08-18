@@ -1,4 +1,4 @@
-"""Test usage of the django_namespaces app."""
+"""Test usage of the django_namespace_permissions app."""
 from http import HTTPStatus
 from typing import Dict, Union
 
@@ -6,15 +6,15 @@ from django.contrib.auth.models import Group
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from django_namespaces.constants import NamespaceActions, ObjectActions
-from django_namespaces.models import (
+from django_namespace_permissions.constants import NamespaceActions, ObjectActions
+from django_namespace_permissions.models import (
     Namespace,
     NamespacePermission,
     NamespaceUser,
     ObjectPermission,
     has_permission,
 )
-from django_namespaces_testproject.models import NamespacedExample
+from testproject.models import NamespacedExample
 
 
 class NamespacePermissionTestBase(TestCase):

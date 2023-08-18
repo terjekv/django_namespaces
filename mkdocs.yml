@@ -1,5 +1,5 @@
 site_name: Django Namespaces
-repo_url: https://github.com/terjekv/django_namespaces
+repo_url: https://github.com/terjekv/django_namespace_permissions
 docs_dir: docs
 site_description: "A permission model for Django through collections of objects."
 

@@ -1,4 +1,4 @@
-"""Models for the django_namespaces app."""
+"""Models for the django_namespace_permissions app."""
 # Meta is a bit bugged: https://github.com/microsoft/pylance-release/issues/3814
 # pyright: reportIncompatibleVariableOverride=false
 
@@ -12,7 +12,7 @@ from django.db import models
 from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 
-from django_namespaces.constants import NamespaceActions, ObjectActions
+from django_namespace_permissions.constants import NamespaceActions, ObjectActions
 
 AnyAction = Union[NamespaceActions, ObjectActions]
 UserOrGroup = Union[AbstractUser, Group]

@@ -2,17 +2,17 @@ documentation:
   - "docs/*"
 
 migrations:
-  - "django_namespaces/migrations/*"
+  - "django_namespace_permissions/migrations/*"
 
 models:
-  - "django_namespaces/models.py"
+  - "django_namespace_permissions/models.py"
 
 dependencies:
   - "poetry.lock"
 
 testing:
-  - "django_namespaces/tests/*"
-  - "django_namespaces_testproject/tests/*"
+  - "django_namespace_permissions/tests/*"
+  - "testproject/tests/*"
   - "tox.ini"
 
 github_actions:

@@ -1,4 +1,4 @@
-"""URLs for the django_namespaces app."""
+"""URLs for the django_namespace_permissions app."""
 
 
 from django.urls import include, path

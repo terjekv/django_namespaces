@@ -4,7 +4,7 @@ from django.conf import settings
 import django.contrib.auth.models
 from django.db import migrations, models
 import django.db.models.deletion
-import django_namespaces.models
+import django_namespace_permissions.models
 
 
 class Migration(migrations.Migration):
@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
                 "indexes": [],
                 "constraints": [],
             },
-            bases=(django_namespaces.models.PermissionMixin, "auth.user"),
+            bases=(django_namespace_permissions.models.PermissionMixin, "auth.user"),
             managers=[
                 ("objects", django.contrib.auth.models.UserManager()),
             ],
@@ -75,7 +75,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="%(class)s_permissions",
-                        to="django_namespaces.namespace",
+                        to="django_namespace_permissions.namespace",
                     ),
                 ),
                 (
@@ -123,7 +123,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="%(class)s_permissions",
-                        to="django_namespaces.namespace",
+                        to="django_namespace_permissions.namespace",
                     ),
                 ),
                 (
