@@ -1,4 +1,4 @@
-"""The base view for use with the django_namespaces."""
+"""The base view for use with the django_namespace_permissions."""
 from typing import Any, Dict, Optional, Type, Union
 
 from django.contrib.auth import get_user_model
@@ -12,15 +12,15 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
-from django_namespaces.constants import NamespaceActions
-from django_namespaces.models import (
+from django_namespace_permissions.constants import NamespaceActions
+from django_namespace_permissions.models import (
     Namespace,
     NamespacePermission,
     ObjectPermission,
     grant_permission,
     has_permission,
 )
-from django_namespaces.serializers import (
+from django_namespace_permissions.serializers import (
     GrantPermissionSerializer,
     NamespacePermissionSerializer,
     NamespaceSerializer,

@@ -2,21 +2,21 @@
 
 ## Add the app to your project
 
-`poetry add git+https://github.com/terjekv/django_namespaces.git#main`
+`poetry add git+https://github.com/terjekv/django_namespace_permissions.git#main`
 
 ## Add the app to your settings
 
 ```python
 INSTALLED_APPS = [
     # ...
-    "django_namespaces",
+    "django_namespace_permissions",
 ]
 ```
 
 ## Add namespaces to models you want to be namespaced
 
 ```python
-from django_namespaces.models import AbstractNamespaceModel
+from django_namespace_permissions.models import AbstractNamespaceModel
 
 class NamespacedExample(AbstractNamespaceModel):
     ...
@@ -52,10 +52,10 @@ class TestDetailViewDRF(NamespacePermissionMixin, RetrieveUpdateDestroyAPIView):
 A set of endpoints are provided to work with namespaces. To use these endpoints, you need to add the following to your `urls.py`:
 
 ```python
-from django_namespaces import urls as django_namespaces_urls
+from django_namespace_permissions import urls as django_namespace_permissions_urls
 
 urlpatterns = [
     # ...
-    path("namespaces/", include(django_namespaces_urls)),
+    path("namespaces/", include(django_namespace_permissions_urls)),
 ]
 ```

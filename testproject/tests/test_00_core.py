@@ -1,21 +1,21 @@
-"""Tests for the core functionality of django_namespaces."""
+"""Tests for the core functionality of django_namespace_permissions."""
 
 from django.contrib.auth.models import Group
 from django.test import TestCase
 from rest_framework.exceptions import PermissionDenied
 
-from django_namespaces.constants import NamespaceActions, ObjectActions
-from django_namespaces.models import (
+from django_namespace_permissions.constants import NamespaceActions, ObjectActions
+from django_namespace_permissions.models import (
     Namespace,
     NamespacePermission,
     NamespaceUser,
     ObjectPermission,
 )
-from django_namespaces_testproject.models import NamespacedExample
+from testproject.models import NamespacedExample
 
 
 class DjangoNamespacesCoreTestCase(TestCase):
-    """Test core functionality for django_namespaces."""
+    """Test core functionality for django_namespace_permissions."""
 
     def setUp(self):
         """Set up the test case."""

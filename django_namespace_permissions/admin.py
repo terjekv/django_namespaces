@@ -1,4 +1,4 @@
-""""Admin interface for the django_namespaces app."""
+""""Admin interface for the django_namespace_permissions app."""
 
 # Register your models here.
 from django.contrib import admin

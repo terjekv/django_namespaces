@@ -1,4 +1,4 @@
-"""Serializers for the django_namespaces app."""
+"""Serializers for the django_namespace_permissions app."""
 
 from typing import Any, Dict, Union
 

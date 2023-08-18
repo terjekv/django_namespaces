@@ -1,4 +1,4 @@
-"""Types and constants for the django_namespaces package."""
+"""Types and constants for the django_namespace_permissions package."""
 
 import enum
 

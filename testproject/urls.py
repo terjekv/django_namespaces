@@ -1,4 +1,4 @@
-"""URL configuration for django_namespaces_testproject project.
+"""URL configuration for testproject project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.2/topics/http/urls/
@@ -19,7 +19,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
-from django_namespaces import urls as django_namespaces_urls
+from django_namespace_permissions import urls as django_namespace_permissions_urls
 
 from .views import TestDetailViewDRF, TestListViewDRF, TestView
 
@@ -32,5 +32,5 @@ urlpatterns = [
         name="test-view-detail",
     ),
     path("testlist/", TestListViewDRF.as_view(), name="test-view-list"),
-    path("namespaces/", include(django_namespaces_urls.router.urls)),
+    path("namespaces/", include(django_namespace_permissions_urls.router.urls)),
 ]

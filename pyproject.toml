@@ -1,14 +1,14 @@
 [tool.poetry]
-name = "django_namespaces"
+name = "django_namespace_permissions"
 version = "0.0.1"
 description = "A django permissions model based on object domains."
 authors = ["Terje Kvernes <terje@kvernes.no>"]
 maintainers = ["Terje Kvernes <terje@kvernes.no>"]
 readme = "README.md"
-homepage = "https://terje.kvernes.no/django_namespaces/"
+homepage = "https://terje.kvernes.no/django_namespace_permissions/"
 license = "CC0-1.0"
-repository = "https://github.com/terjekv/django_namespaces/"
-documentation = "https://terje.kvernes.no/django_namespaces/"
+repository = "https://github.com/terjekv/django_namespace_permissions/"
+documentation = "https://terje.kvernes.no/django_namespace_permissions/"
 keywords = ["cmdb", "django", "rest"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
-exclude = ["django_namespaces_testproject", "env"]
+exclude = ["testproject", "env"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -63,13 +63,10 @@ exclude = '''
 
 '''
 [tool.coverage.run]
-source = ["django_namespaces", "django_namespacessite"]
+source = ["django_namespace_permissions", "django_namespace_permissionssite"]
 # concurrency = multiprocessing
 # parallel = True
-omit = [
-    "django_namespaces_testproject/asgi.py",
-    "django_namespaces_testproject/wsgi.py",
-]
+omit = ["testproject/asgi.py", "testproject/wsgi.py"]
 
 [tool.coverage.report]
 fail_under = 100
@@ -78,10 +75,7 @@ show_missing = true
 [tool.isort]
 profile = "black"
 line_length = 99
-skip = [
-    "django_namespaces/migrations",
-    "django_namespaces_testproject/migrations",
-]
+skip = ["django_namespace_permissions/migrations", "testproject/migrations"]
 
 [tool.ruff]
 select = [

@@ -1,4 +1,4 @@
-"""Mixins for use with the django_namespaces."""
+"""Mixins for use with the django_namespace_permissions."""
 from typing import Any, Type
 
 from django.db.models import Model, Q, QuerySet
@@ -7,14 +7,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django_namespaces.constants import ObjectActions
-from django_namespaces.models import (
+from django_namespace_permissions.constants import ObjectActions
+from django_namespace_permissions.models import (
     AbstractNamespaceModel,
     Namespace,
     ObjectPermission,
     has_permission,
 )
-from django_namespaces.views import get_from_id_or_name
+from django_namespace_permissions.views import get_from_id_or_name
 
 from .constants import HTTP_METHOD_TO_OBJECTACTION_MAP
 

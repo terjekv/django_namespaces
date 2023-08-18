@@ -2,7 +2,7 @@
 from django.views.generic import ListView
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
-from django_namespaces.mixins import NamespacePermissionMixin
+from django_namespace_permissions.mixins import NamespacePermissionMixin
 
 from .models import NamespacedExample
 from .serializers import NamespacedExampleSerializer

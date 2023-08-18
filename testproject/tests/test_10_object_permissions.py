@@ -7,15 +7,15 @@ from django.http import HttpResponse
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from django_namespaces.constants import NamespaceActions as NA
-from django_namespaces.constants import ObjectActions as OA
-from django_namespaces.models import (
+from django_namespace_permissions.constants import NamespaceActions as NA
+from django_namespace_permissions.constants import ObjectActions as OA
+from django_namespace_permissions.models import (
     Namespace,
     NamespacePermission,
     NamespaceUser,
     ObjectPermission,
 )
-from django_namespaces_testproject.models import NamespacedExample
+from testproject.models import NamespacedExample
 
 TEST_VIEW_LIST_URL = reverse("test-view-list")
 NAMESPACE_LIST_URL = reverse("namespace-list-list")
