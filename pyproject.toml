@@ -44,7 +44,7 @@ pytest-xdist = "*"
 tox = "^4"
 
 [tool.poetry.group.docs.dependencies]
-mkdocs = "1.4.3"
+mkdocs = "1.5.3"
 mkdocs-material = "9.1.20"
 mkdocs-swagger-ui-tag = "0.6.4"
 mkdocs-git-revision-date-localized-plugin = "1.2.0"
