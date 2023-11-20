@@ -735,13 +735,13 @@ files = [
 
 [[package]]
 name = "mkdocs-swagger-ui-tag"
-version = "0.6.5"
+version = "0.6.7"
 description = "A MkDocs plugin supports for add Swagger UI in page."
 optional = false
 python-versions = "*"
 files = [
-    {file = "mkdocs-swagger-ui-tag-0.6.5.tar.gz", hash = "sha256:4e0371937f7aefad14bbe48e9f1aeb4bf48c6fabf0a7c0fb1c0d95bcb7c9e2fc"},
-    {file = "mkdocs_swagger_ui_tag-0.6.5-py3-none-any.whl", hash = "sha256:2204f279bdda84ba39c3d2db50cf230b9be4785fd28bfd6d7a428854a95c8f3a"},
+    {file = "mkdocs-swagger-ui-tag-0.6.7.tar.gz", hash = "sha256:a1fa79c1761ccf82fb45969ef15597f43f7169e6c581f80f42bd5168fa07105b"},
+    {file = "mkdocs_swagger_ui_tag-0.6.7-py3-none-any.whl", hash = "sha256:522a7412ab35dfb4ab8fbe99364fc6e08d7613eac441ba79be5f7ba84d027663"},
 ]
 
 [package.dependencies]
@@ -1536,4 +1536,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "6ceb8cab5db20ec567b6895afc6c90baa745ebb35d23f6ae3d65049d516db457"
+content-hash = "8afb0cd3fd96417c2961cd626ce647800837d51b77544adaadcb23b20773b51d"
