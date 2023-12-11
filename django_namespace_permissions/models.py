@@ -175,9 +175,7 @@ def revoke_permission(
 
             # If all permissions are now False, we delete the object
             # otherwise, just save the changes.
-            if all(
-                [getattr(perm_obj, perm.value) is False for perm in action.__class__]
-            ):
+            if all([getattr(perm_obj, perm.value) is False for perm in action.__class__]):
                 perm_obj.delete()
             else:
                 perm_obj.save()
@@ -238,17 +236,13 @@ class BasePermission(models.Model):
         if not self.group and not self.user:
             raise ValidationError("Either group or user must be set.")
         if self.group and self.user:
-            raise ValidationError(
-                "Permission cannot belong to both a group and a user."
-            )
+            raise ValidationError("Permission cannot belong to both a group and a user.")
         super().save(*args, **kwargs)
 
     def get_true_permission_fields(self) -> List[str]:
         """Get a list of the permission fields that are True."""
         return [
-            field
-            for field, value in self.__dict__.items()
-            if field.startswith("has_") and value
+            field for field, value in self.__dict__.items() if field.startswith("has_") and value
         ]
 
 
@@ -309,9 +303,7 @@ class Namespace(models.Model):
         params: user_or_group (User or Group): The user or group to grant the permission to.
         params: action (NamespacePermissions) The action to grant permissions for.
         """
-        return self.grant_permission(
-            NamespacePermission, user_or_group, action, requestor
-        )
+        return self.grant_permission(NamespacePermission, user_or_group, action, requestor)
 
     def grant_object_permission(
         self, user_or_group: UserOrGroup, action: ObjectActions, requestor: AbstractUser
@@ -351,9 +343,7 @@ class Namespace(models.Model):
         :param action: The action to revoke. If None, all permissions are revoked.
         :return: True if the operation was successful, False otherwise.
         """
-        return self.revoke_permission(
-            NamespacePermission, user_or_group, action, requestor
-        )
+        return self.revoke_permission(NamespacePermission, user_or_group, action, requestor)
 
     def revoke_object_permission(
         self, user_or_group: UserOrGroup, action: ObjectActions, requestor: AbstractUser
@@ -364,9 +354,7 @@ class Namespace(models.Model):
         :param action: The action to revoke. If None, all permissions are revoked.
         :return: True if the operation was successful, False otherwise.
         """
-        return self.revoke_permission(
-            ObjectPermission, user_or_group, action, requestor
-        )
+        return self.revoke_permission(ObjectPermission, user_or_group, action, requestor)
 
     def get_permissions_representation(
         self, permission_model: Union[Type[ObjectPermission], Type[NamespacePermission]]
@@ -401,9 +389,7 @@ class Namespace(models.Model):
 class PermissionMixin:
     """A mixin for models that can have permissions."""
 
-    def i_can(
-        self, action: AnyAction, obj: Union["Namespace", "AbstractNamespaceModel"]
-    ) -> bool:
+    def i_can(self, action: AnyAction, obj: Union["Namespace", "AbstractNamespaceModel"]) -> bool:
         """Check if the current user can perform an action on an object or a namespace.
 
         :param action (NamespaceAction or ObjectAction): The action to check permissions for.
@@ -419,9 +405,7 @@ class PermissionMixin:
         """
         return self.target_can_namespace(self, action, obj)
 
-    def i_can_object(
-        self, action: ObjectActions, obj: "AbstractNamespaceModel"
-    ) -> bool:
+    def i_can_object(self, action: ObjectActions, obj: "AbstractNamespaceModel") -> bool:
         """Check if the current user can perform the given action on the given object.
 
         :param action (ObjectActions): The action to check permissions for.

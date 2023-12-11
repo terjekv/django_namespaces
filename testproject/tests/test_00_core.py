@@ -33,12 +33,8 @@ class DjangoNamespacesCoreTestCase(TestCase):
         self.group2 = Group.objects.create(name="test_group2")
 
         # Create test objects
-        self.test1 = NamespacedExample.objects.create(
-            name="test1", namespace=self.namespace1
-        )
-        self.test2 = NamespacedExample.objects.create(
-            name="test2", namespace=self.namespace2
-        )
+        self.test1 = NamespacedExample.objects.create(name="test1", namespace=self.namespace1)
+        self.test2 = NamespacedExample.objects.create(name="test2", namespace=self.namespace2)
 
     def test_grant_user1_read_permission_to_namespace_namespace1(self):
         """Test granting a user read permission to a namespace."""
@@ -53,14 +49,10 @@ class DjangoNamespacesCoreTestCase(TestCase):
         )
 
         self.assertTrue(
-            self.superuser.target_can_namespace(
-                self.user1, NamespaceActions.READ, self.namespace1
-            )
+            self.superuser.target_can_namespace(self.user1, NamespaceActions.READ, self.namespace1)
         )
 
-        self.assertTrue(
-            self.user1.i_can_namespace(NamespaceActions.READ, self.namespace1)
-        )
+        self.assertTrue(self.user1.i_can_namespace(NamespaceActions.READ, self.namespace1))
 
         self.assertTrue(self.user1.i_can(NamespaceActions.READ, self.namespace1))
 
@@ -73,9 +65,7 @@ class DjangoNamespacesCoreTestCase(TestCase):
 
     def test_grant_user1_read_permission_to_object_test1(self):
         """Test granting a user read permission to an object."""
-        self.namespace1.grant_object_permission(
-            self.user1, ObjectActions.READ, self.superuser
-        )
+        self.namespace1.grant_object_permission(self.user1, ObjectActions.READ, self.superuser)
 
         self.assertTrue(
             ObjectPermission.objects.filter(
