@@ -63,9 +63,7 @@ class ObjectPermissionTestBase(TestCase):
         for i in range(1, 9):
             namespace = self.namespace2 if i % 2 == 0 else self.namespace1
             name = f"test{i:02}"
-            self.objects[name] = NamespacedExample.objects.create(
-                name=name, namespace=namespace
-            )
+            self.objects[name] = NamespacedExample.objects.create(name=name, namespace=namespace)
 
     def _initialize_clients(self):
         """Initialize clients."""
@@ -148,13 +146,9 @@ class ObjectPermissionTestBase(TestCase):
     def test_superuser_sees_everything(self):
         """Test that the superuser sees all objects."""
         for name, obj in self.objects.items():
-            self._assert_detail_response(
-                self.superuserclient, obj.pk, HTTPStatus.OK, name
-            )
+            self._assert_detail_response(self.superuserclient, obj.pk, HTTPStatus.OK, name)
 
-        self._assert_list_response(
-            self.superuserclient, HTTPStatus.OK, expected_length=8
-        )
+        self._assert_list_response(self.superuserclient, HTTPStatus.OK, expected_length=8)
 
     def test_users_see_nothing_without_permissions(self):
         """Test that the default users see nothing without permissions."""
@@ -175,13 +169,9 @@ class ObjectPermissionTestBase(TestCase):
 
     def test_users_see_objects_with_permissions(self):
         """Test that user1 sees objects in namespace1 when given permission."""
-        self.namespace1.grant_permission(
-            ObjectPermission, self.user1, OA.READ, self.superuser
-        )
+        self.namespace1.grant_permission(ObjectPermission, self.user1, OA.READ, self.superuser)
         self._assert_list_response(self.user1client, HTTPStatus.OK, expected_length=4)
-        self._assert_detail_response(
-            self.user1client, self.objects["test01"].pk, 200, "test01"
-        )
+        self._assert_detail_response(self.user1client, self.objects["test01"].pk, 200, "test01")
 
     def test_users_can_create_objects_with_permissions(self):
         """Test that user1 can create objects in namespace1 when given permission."""
@@ -192,9 +182,7 @@ class ObjectPermissionTestBase(TestCase):
 
         post_data = {"name": "test09", "namespace": self.namespace1.pk}
         self._assert_post_response(self.user1client, post_data, 403)
-        self.namespace1.grant_permission(
-            ObjectPermission, self.user1, OA.CREATE, self.superuser
-        )
+        self.namespace1.grant_permission(ObjectPermission, self.user1, OA.CREATE, self.superuser)
         self._assert_post_response(self.user1client, post_data, 201, name="test09")
         NamespacedExample.objects.get(name="test09").delete()
 
@@ -209,9 +197,7 @@ class ObjectPermissionTestBase(TestCase):
             self.user1client, "test01", {"name": "test01patch"}, HTTPStatus.NOT_FOUND
         )
 
-        self.namespace1.grant_permission(
-            ObjectPermission, self.user1, OA.UPDATE, self.superuser
-        )
+        self.namespace1.grant_permission(ObjectPermission, self.user1, OA.UPDATE, self.superuser)
 
         self._assert_patch_response(
             self.user1client,
@@ -223,9 +209,7 @@ class ObjectPermissionTestBase(TestCase):
 
     def test_users_see_namespaces_with_permissions(self):
         """Test that user1 sees namespaces when given permission."""
-        self.namespace1.grant_permission(
-            NamespacePermission, self.user1, NA.READ, self.superuser
-        )
+        self.namespace1.grant_permission(NamespacePermission, self.user1, NA.READ, self.superuser)
         self._assert_list_response(
             self.user1client, HTTPStatus.OK, expected_length=1, url=NAMESPACE_LIST_URL
         )
@@ -247,12 +231,8 @@ class ObjectPermissionTestBase(TestCase):
             self.namespace1.grant_permission(
                 ObjectPermission, self.user1, permission, self.superuser
             )
-            self._assert_list_response(
-                self.user1client, HTTPStatus.OK, expected_length=0
-            )
-            self._assert_detail_response(
-                self.user1client, "test01", HTTPStatus.NOT_FOUND
-            )
+            self._assert_list_response(self.user1client, HTTPStatus.OK, expected_length=0)
+            self._assert_detail_response(self.user1client, "test01", HTTPStatus.NOT_FOUND)
 
             self.namespace1.revoke_permission(
                 ObjectPermission, self.user1, permission, self.superuser
@@ -311,13 +291,9 @@ class ObjectPermissionTestBase(TestCase):
         permissions are granted to the same source (the user themselves).
         """
         tmpns = Namespace.objects.create(name="tmp_namespace")
-        tmpns.grant_permission(
-            NamespacePermission, self.user1, NA.DELETE, self.superuser
-        )
+        tmpns.grant_permission(NamespacePermission, self.user1, NA.DELETE, self.superuser)
         tmpns.grant_permission(NamespacePermission, self.user1, NA.READ, self.superuser)
-        response = self.user1client.delete(
-            reverse("namespace-list-detail", args=[tmpns.id])
-        )
+        response = self.user1client.delete(reverse("namespace-list-detail", args=[tmpns.id]))
         self.assertEqual(response.status_code, HTTPStatus.NO_CONTENT)
 
         with self.assertRaises(Namespace.DoesNotExist):
@@ -335,9 +311,7 @@ class ObjectPermissionTestBase(TestCase):
         tmpns = Namespace.objects.create(name="tmp_namespace")
         readgroup = Group.objects.create(name="readgroup")
         deletegroup = Group.objects.create(name="deletegroup")
-        tmpns.grant_permission(
-            NamespacePermission, deletegroup, NA.DELETE, self.superuser
-        )
+        tmpns.grant_permission(NamespacePermission, deletegroup, NA.DELETE, self.superuser)
         tmpns.grant_permission(NamespacePermission, readgroup, NA.READ, self.superuser)
 
         self.user1.groups.add(readgroup)
@@ -350,15 +324,11 @@ class ObjectPermissionTestBase(TestCase):
             url=reverse("namespace-list-detail", args=[tmpns.pk]),
         )
 
-        response = self.user1client.delete(
-            reverse("namespace-list-detail", args=[tmpns.id])
-        )
+        response = self.user1client.delete(reverse("namespace-list-detail", args=[tmpns.id]))
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
         self.user1.groups.add(deletegroup)
-        response = self.user1client.delete(
-            reverse("namespace-list-detail", args=[tmpns.id])
-        )
+        response = self.user1client.delete(reverse("namespace-list-detail", args=[tmpns.id]))
         self.assertEqual(response.status_code, HTTPStatus.NO_CONTENT)
 
         with self.assertRaises(Namespace.DoesNotExist):
@@ -390,9 +360,7 @@ class ObjectPermissionTestBase(TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
-        tmpns.grant_permission(
-            NamespacePermission, self.user1, NA.UPDATE, self.superuser
-        )
+        tmpns.grant_permission(NamespacePermission, self.user1, NA.UPDATE, self.superuser)
         response = self.user1client.patch(
             url, {"name": "tmp_namespace2"}, content_type="application/json"
         )

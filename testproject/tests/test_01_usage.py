@@ -31,11 +31,7 @@ class NamespacePermissionTestBase(TestCase):
         self, action: Union[NamespaceActions, ObjectActions], expected_result: bool
     ):
         """Assert a single permission."""
-        model = (
-            NamespacePermission
-            if isinstance(action, NamespaceActions)
-            else ObjectPermission
-        )
+        model = NamespacePermission if isinstance(action, NamespaceActions) else ObjectPermission
         result = has_permission(
             model,
             self.namespace1,
@@ -61,12 +57,8 @@ class NamespacePermissionTestBase(TestCase):
         self.group2 = Group.objects.create(name="test_group2")
 
         # Create test objects
-        self.test1 = NamespacedExample.objects.create(
-            name="test1", namespace=self.namespace1
-        )
-        self.test2 = NamespacedExample.objects.create(
-            name="test2", namespace=self.namespace2
-        )
+        self.test1 = NamespacedExample.objects.create(name="test1", namespace=self.namespace1)
+        self.test2 = NamespacedExample.objects.create(name="test2", namespace=self.namespace2)
 
         self.client = Client()
         self.client.force_login(self.superuser)
@@ -111,9 +103,7 @@ class NamespacePermissionTestBase(TestCase):
                 self.group1, NamespaceActions.DELEGATE, self.superuser
             )
 
-            self.namespace1.grant_object_permission(
-                self.user2, ObjectActions.READ, self.superuser
-            )
+            self.namespace1.grant_object_permission(self.user2, ObjectActions.READ, self.superuser)
             self.user1.groups.add(self.group1)
 
             response = self.client.get(url)
@@ -126,9 +116,7 @@ class NamespacePermissionTestBase(TestCase):
                 data["namespace_permissions"]["groups"][str(self.group1.id)],
                 ["has_delegate"],
             )
-            self.assertEqual(
-                data["object_permissions"]["users"][str(self.user2.id)], ["has_read"]
-            )
+            self.assertEqual(data["object_permissions"]["users"][str(self.user2.id)], ["has_read"])
 
             # Check that the group is directly OK.
             self.assertTrue(

@@ -91,9 +91,7 @@ class NamespaceViewSet(viewsets.ModelViewSet):
         # Return the filtered queryset based on permissions
         return Namespace.objects.filter(id__in=permitted_namespace_ids)
 
-    def check_permission(
-        self, action: NamespaceActions, instance: Type[Namespace] = None
-    ) -> None:
+    def check_permission(self, action: NamespaceActions, instance: Type[Namespace] = None) -> None:
         """Check if the user has permission to perform the given action.
 
         :param action: The desired action from NamespaceActions.
@@ -143,9 +141,7 @@ class NamespaceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def retrieve(
-        self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Response:  # noqa
+    def retrieve(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:  # noqa
         """Get a specific namespaces for the authenticated user.
 
         :param request (Request): The DRF request object.
@@ -166,9 +162,7 @@ class NamespaceViewSet(viewsets.ModelViewSet):
         serializer = self.handle_serializer(request.data)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def destroy(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:
         """Delete a namespace.
@@ -194,9 +188,7 @@ class NamespaceViewSet(viewsets.ModelViewSet):
         self.check_permission(NamespaceActions.UPDATE, instance)
 
         partial = kwargs.get("partial", False)
-        serializer = self.handle_serializer(
-            request.data, instance=instance, partial=partial
-        )
+        serializer = self.handle_serializer(request.data, instance=instance, partial=partial)
 
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -221,9 +213,7 @@ class NamespaceGrantViewSet(viewsets.ViewSet):
         """
         return NamespacePermission if object_type == "namespace" else ObjectPermission
 
-    def _get_user_or_group(
-        self, entity: str, identifier: Union[int, str]
-    ) -> models.Model:
+    def _get_user_or_group(self, entity: str, identifier: Union[int, str]) -> models.Model:
         """Retrieve a user or group based on its entity type and ID or name.
 
         :param entity: The type of entity, either 'user' or 'group'.
@@ -252,9 +242,7 @@ class NamespaceGrantViewSet(viewsets.ViewSet):
         for perm in serializer.validated_data["actions"]:  # type: ignore
             grant_permission(model, namespace, user_or_group, perm, self.request.user)
 
-        return Response(
-            {"message": "Permission granted successfully."}, status=status.HTTP_200_OK
-        )
+        return Response({"message": "Permission granted successfully."}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["GET"])
     def list_permissions(self, request: HttpRequest, **kwargs: Any):
@@ -274,9 +262,7 @@ class NamespaceGrantViewSet(viewsets.ViewSet):
         if not permissions.exists():
             raise NotFound("No permissions found.")
 
-        return Response(
-            serializer_class(permissions, many=True).data, status=status.HTTP_200_OK
-        )
+        return Response(serializer_class(permissions, many=True).data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["PATCH"], url_path="modify")
     def modify_permissions(self, request: HttpRequest, **kwargs: Any):
@@ -292,9 +278,7 @@ class NamespaceGrantViewSet(viewsets.ViewSet):
         user_or_group = self._get_user_or_group(kwargs["entity"], kwargs["id"])
         user_or_group_filter = {kwargs["entity"]: user_or_group}
 
-        permissions_to_remove = model.objects.filter(
-            namespace=namespace, **user_or_group_filter
-        )
+        permissions_to_remove = model.objects.filter(namespace=namespace, **user_or_group_filter)
 
         can_update = has_permission(
             model,
@@ -315,9 +299,7 @@ class NamespaceGrantViewSet(viewsets.ViewSet):
             permissions_to_remove.delete()
             # Re-grant permissions
             for perm in serializer.validated_data["actions"]:  # type: ignore
-                grant_permission(
-                    model, namespace, user_or_group, perm, self.request.user
-                )
+                grant_permission(model, namespace, user_or_group, perm, self.request.user)
 
         return Response(
             {"message": "Permissions modified successfully."}, status=status.HTTP_200_OK

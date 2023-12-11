@@ -199,9 +199,7 @@ class DjangoNamespacesModelTestCase(TestCase):
         # Test that we can revoke permissions via the namespace.
         grant_permission(*rargs)
         self.assertTrue(has_permission(*rargs))
-        self.namespace.revoke_namespace_permission(
-            self.user, NamespaceActions.READ, self.su
-        )
+        self.namespace.revoke_namespace_permission(self.user, NamespaceActions.READ, self.su)
         self.assertFalse(has_permission(*rargs))
 
         cls = ObjectPermission

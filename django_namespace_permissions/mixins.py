@@ -41,8 +41,7 @@ class NamespacePermissionMixin:
 
         if issubclass(view.queryset.model, AbstractNamespaceModel):
             permitted_namespace_ids = ObjectPermission.objects.filter(
-                Q(group__in=user.groups.all()) | Q(user=user),
-                **{permission_required: True}
+                Q(group__in=user.groups.all()) | Q(user=user), **{permission_required: True}
             ).values("namespace_id")
 
             return Q(namespace_id__in=permitted_namespace_ids)
@@ -92,11 +91,7 @@ class NamespacePermissionMixin:
         namespace_id = request.data.get("namespace")
         namespace = get_from_id_or_name(Namespace, namespace_id)
         user = request.user
-        if not has_permission(
-            ObjectPermission, namespace, user, ObjectActions.CREATE, None
-        ):
-            raise PermissionDenied(
-                "Permission denied for action 'create' in {str(namespace)}"
-            )
+        if not has_permission(ObjectPermission, namespace, user, ObjectActions.CREATE, None):
+            raise PermissionDenied("Permission denied for action 'create' in {str(namespace)}")
 
         return super().create(request, *args, **kwargs)
